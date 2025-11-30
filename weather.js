@@ -1,9 +1,10 @@
 const https = require('https');
 const { readCache, writeCache } = require('./history');
 const fs = require('fs').promises;
-const {  getWeather } = require('./api');
+const { getWeather } = require('./api');
 var name = process.argv[2];
 const flag = process.argv[3];
+const selectDate = process.argv[4]
 
 function normalizeInput(string) {
   return string.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -25,7 +26,7 @@ async function getCache(arg) {
       }
     }
   }
-  return null ;
+  return null;
 }
 
 async function organize(location, weather) {
@@ -50,7 +51,7 @@ async function organize(location, weather) {
   }
   Object.assign(fullList[location.country][location.city], requestedList);
 
-  return {fullList, requestedList};
+  return { fullList, requestedList };
 }
 
 function userinput(flag) {
@@ -69,51 +70,62 @@ function userinput(flag) {
   const month = todaySplit[0];
   const day = todaySplit[1];
   const year = todaySplit[2];
-  const date = year + '-' + month + '-' + day;
+  let date = year + '-' + month + '-' + day;
   const numberHour = Number(hour);
   const adjustedTime = amPm === 'AM' && numberHour < 12 ? numberHour : amPm === 'PM' && numberHour < 12 ? numberHour + 12 : 0;
   const time = String(adjustedTime).length === 1 ? "0" + adjustedTime + ":00" : adjustedTime + ":00";
+
   if (flag === '--now') { return { date, time } };
   if (flag === '--today') { return { date } };
+  if (flag === '--date') {
+    date = selectDate;
+    return { date }
+  };
+
   return {};
 
 }
 
 
-function cleanOutput(location, list, input) {
+function cleanOutput(location, list) {
 
   console.log(`📍  ${location.city},${location.countryCode}`);
+  try {
+    Object.entries(list).forEach(([date, times]) => {
+
+      const dayOfweek = getDayOfWeek(date);
+      console.log(`${dayOfweek} ${date}`);
+      console.log();
+
+
+      Object.entries(times).forEach(([hour, weather]) => {
+        const temperature = weather[0];
+        const rain = weather[1];
+        const snowfall = weather[2];
+
+        console.log(hour);
+
+        console.log(`     🌡️   Temperature: ${temperature}`);
+        console.log(`     🌧️   Rain: ${rain}`);
+        console.log(`     ❄️   Snow: ${snowfall}`);
+        console.log('     -------------------------------------------------------------------');
+
+
+      })
+
+    }
+
+    )
+  }
+  catch (err) {
+    console.log('Data not found');
+    return;
+
+  }
   
-  Object.entries(list).forEach(([date, times]) => {
-
-    const dayOfweek = getDayOfWeek(date);
-    console.log(`${dayOfweek} ${date}`);
-    console.log();
-
-
-    Object.entries(times).forEach(([hour, weather]) => {
-      const temperature = weather[0];
-      const rain = weather[1];
-      const snowfall = weather[2];
-      
-      console.log(hour);
-      
-      console.log(`     🌡️   Temperature: ${temperature}`);
-      console.log(`     🌧️   Rain: ${rain}`);
-      console.log(`     ❄️   Snow: ${snowfall}`);
-      console.log('     -------------------------------------------------------------------');
-
-
-    })
-
-  })
-  const day = Object.keys(list)[0]; 
-  const time = list[day];
-  const hour = Object.keys(time)[0];
-
 }
 function displayWeather(list, date, time) {
-  
+
   if (date && time) {
     return { [date]: { [time]: list[date][time] } };
   }
