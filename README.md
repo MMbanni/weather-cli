@@ -26,7 +26,7 @@ node weather.js berlin --date 2025-12-20
 
 ```
 
-## Installation
+### Installation
 
 ```bash
 git clone https://github.com/MMbanni/weather-cli.git
